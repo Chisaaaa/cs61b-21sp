@@ -114,11 +114,77 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+        //thought:新写一个函数返回该tile上还有多少个空位置，从第二行开始遍历board使用该函数，先判断能否合并，能合并就先合并。
+
+        this.board.setViewingPerspective(side);
+
+        for (int i = 0; i < this.board.size(); i += 1){
+            int flag = 1;
+            //每列有一个flag，用于rule 2，flag为-1则表示前一个数经过一次合并，1则表示未经过合并
+
+            for (int j = this.board.size() - 2; j >= 0; j -= 1){
+                if (this.board.tile(i, j) != null){
+                    //不为空格才能继续
+                    int pre_num = get_pre_nonempty(this.board, i, j);
+                    int now_num = this.board.tile(i, j).value();
+                    Tile t = this.board.tile(i, j);
+
+                    if (pre_num == 1){
+                        //如果该格上面全为空
+                        this.board.move(i, this.board.size() - 1, t);
+                    }
+                    else {
+                        //如果该格上面不全为空
+                        int empty_pos = empty_position_num(this.board, i, j);
+
+                        if(pre_num == now_num && flag == 1){
+                            //需要合并
+                            this.board.move(i, empty_pos, t);
+                            this.score += 2 * now_num;
+                            flag = -1;
+                        } else if (empty_pos == j + 1) {
+                            //不需要合并，不需要移动
+                        } else {
+                            //不需要合并且需要移动
+                            this.board.move(i, empty_pos - 1, t);
+                            flag = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        this.board.setViewingPerspective(Side.NORTH);
+
         checkGameOver();
         if (changed) {
             setChanged();
         }
         return changed;
+    }
+
+
+    public int get_pre_nonempty(Board b, int now_col, int now_row){
+        int pre_nonempty = 1;
+        for (int i = now_row + 1; i <= b.size() - 1; i += 1){
+            if (b.tile(now_col, i) != null) {
+                pre_nonempty = b.tile(now_col, i).value();
+                break;
+            }
+        }
+        return pre_nonempty;
+    }
+
+    public int empty_position_num(Board b, int now_col, int now_row){
+        //返回该格的前一个不空的格的行(row)值，如果该格的上面全空，则返回-1
+        int empty_position = -1;
+        for (int i = now_row + 1; i <= b.size() - 1; i += 1){
+            if (b.tile(now_col, i) != null) {
+                empty_position = i;
+                break;
+            }
+        }
+        return empty_position;
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -138,6 +204,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i += 1){
+            for (int j = 0; j < b.size(); j += 1){
+                if (b.tile(i, j) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +221,16 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i += 1){
+            for (int j = 0; j < b.size(); j += 1){
+                if (b.tile(i, j) == null) {
+                    continue;
+                }
+                if (b.tile(i, j).value() == MAX_PIECE){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,9 +242,45 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) return true;
+        for (int i = 0; i < b.size(); i += 1){
+            for (int j = 0; j < b.size(); j += 1){
+                if (check_up(b, i, j)) return true;
+                if (check_down(b, i, j)) return true;
+                if (check_left(b, i, j)) return true;
+                if (check_right(b, i, j)) return true;
+            }
+        }
         return false;
     }
 
+    public static boolean check_up(Board b, int now_col, int now_row) {
+        if (now_row == 0) return false;
+        if (b.tile(now_col, now_row) == null || b.tile(now_col, now_row - 1) == null) return false;
+        else if (b.tile(now_col, now_row).value() == b.tile(now_col, now_row - 1).value()) return true;
+        else return false;
+    }
+
+    public static boolean check_down(Board b, int now_col, int now_row) {
+        if (now_row == b.size() - 1) return false;
+        if (b.tile(now_col, now_row) == null || b.tile(now_col, now_row + 1) == null) return false;
+        else if (b.tile(now_col, now_row).value() == b.tile(now_col, now_row + 1).value()) return true;
+        else return false;
+    }
+
+    public static boolean check_left(Board b, int now_col, int now_row) {
+        if (now_col == 0) return false;
+        if (b.tile(now_col, now_row) == null || b.tile(now_col - 1, now_row) == null) return false;
+        else if (b.tile(now_col, now_row).value() == b.tile(now_col - 1, now_row).value()) return true;
+        else return false;
+    }
+
+    public static boolean check_right(Board b, int now_col, int now_row) {
+        if (now_col == b.size() - 1) return false;
+        if (b.tile(now_col, now_row) == null || b.tile(now_col + 1, now_row) == null) return false;
+        else if (b.tile(now_col, now_row).value() == b.tile(now_col + 1, now_row).value()) return true;
+        else return false;
+    }
 
     @Override
      /** Returns the model as a string, used for debugging. */
