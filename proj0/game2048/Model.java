@@ -132,6 +132,7 @@ public class Model extends Observable {
                     if (pre_num == 1){
                         //如果该格上面全为空
                         this.board.move(i, this.board.size() - 1, t);
+                        changed = true;
                     }
                     else {
                         //如果该格上面不全为空
@@ -142,12 +143,14 @@ public class Model extends Observable {
                             this.board.move(i, empty_pos, t);
                             this.score += 2 * now_num;
                             flag = -1;
+                            changed = true;
                         } else if (empty_pos == j + 1) {
                             //不需要合并，不需要移动
                         } else {
                             //不需要合并且需要移动
                             this.board.move(i, empty_pos - 1, t);
                             flag = 1;
+                            changed = true;
                         }
                     }
                 }
